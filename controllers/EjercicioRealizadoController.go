@@ -10,9 +10,10 @@ import (
 )
 
 type EjercicioRealizadoRequestBody struct {
-	Resultado   int  `json:"resultado"`
-	UsuarioID   uint `json:"usuarioId"`
-	EjercicioID uint `json:"ejercicioId"`
+	Resultado   string `json:"resultado"`
+	UsuarioID   uint   `json:"usuarioId"`
+	EjercicioID uint   `json:"ejercicioId"`
+	Aprobado    bool   `json:"aprobado"`
 }
 
 func EjercicioRealizadoCreate(c *gin.Context) {
@@ -27,6 +28,7 @@ func EjercicioRealizadoCreate(c *gin.Context) {
 		Resultado:   body.Resultado,
 		UsuarioID:   body.UsuarioID,
 		EjercicioID: body.EjercicioID,
+		Aprobado:    body.Aprobado,
 	}
 	result := configs.DB.Create(&ejercicioRealizado)
 	if result.Error != nil {
@@ -74,6 +76,7 @@ func EjercicioRealizadoUpdate(c *gin.Context) {
 		Resultado:   body.Resultado,
 		UsuarioID:   body.UsuarioID,
 		EjercicioID: body.EjercicioID,
+		Aprobado:    body.Aprobado,
 	}
 
 	result2 := configs.DB.Model(&ejercicioRealizado).Updates(updatedData)
