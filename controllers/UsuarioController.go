@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"net/http"
+
 	"github.com/Yeiner-Castro/pronouneit.git/configs"
 	"github.com/Yeiner-Castro/pronouneit.git/models"
 
@@ -20,7 +22,12 @@ func UsuarioCreate(c *gin.Context) {
 
 	c.BindJSON(&body)
 
-	usuario := &models.Usuario{Nombre: body.Nombre, Apellido: body.Apellido, Correo: body.Correo, Contrasenia: body.Contrasenia}
+	usuario := &models.Usuario{
+		Nombre:      body.Nombre,
+		Apellido:    body.Apellido,
+		Correo:      body.Correo,
+		Contrasenia: body.Contrasenia,
+	}
 
 	result := configs.DB.Create(&usuario)
 
@@ -29,35 +36,51 @@ func UsuarioCreate(c *gin.Context) {
 		return
 	}
 
-	c.JSON(200, &usuario)
+	c.JSON(http.StatusOK, &usuario)
 }
 
-func UsuarioGet(c *gin.Context) {
+func UsuarioGetAll(c *gin.Context) {
 	var usuarios []models.Usuario
 	configs.DB.Find(&usuarios)
-	c.JSON(200, &usuarios)
-	return
+	c.JSON(http.StatusOK, &usuarios)
 }
 
 func UsuarioGetById(c *gin.Context) {
 	id := c.Param("id")
 	var usuario models.Usuario
-	configs.DB.First(&usuario, id)
-	c.JSON(200, &usuario)
-	return
+	result := configs.DB.First(&usuario, id)
+
+	if result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"Error": "Not Found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, &usuario)
 }
 
 func UsuarioUpdate(c *gin.Context) {
 
 	id := c.Param("id")
 	var usuario models.Usuario
-	configs.DB.First(&usuario, id)
+	if err := configs.DB.First(&usuario, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Usuario not found"})
+		return
+	}
 
-	body := UsuarioRequestBody{}
-	c.BindJSON(&body)
-	data := &models.Usuario{Nombre: body.Nombre, Apellido: body.Apellido, Correo: body.Correo, Contrasenia: body.Contrasenia}
+	var body UsuarioRequestBody
+	if err := c.BindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid data"})
+		return
+	}
 
-	result := configs.DB.Model(&usuario).Updates(data)
+	updatedData := models.Usuario{
+		Nombre:      body.Nombre,
+		Apellido:    body.Apellido,
+		Correo:      body.Correo,
+		Contrasenia: body.Contrasenia,
+	}
+
+	result := configs.DB.Model(&usuario).Updates(updatedData)
 
 	if result.Error != nil {
 		c.JSON(500, gin.H{"Error": true, "message": "Failed to update"})
@@ -70,7 +93,11 @@ func UsuarioUpdate(c *gin.Context) {
 func UsuarioDelete(c *gin.Context) {
 	id := c.Param("id")
 	var usuario models.Usuario
-	configs.DB.Delete(&usuario, id)
+	result := configs.DB.Delete(&usuario, id)
+
+	if result.Error != nil {
+		c.JSON(500, gin.H{"Error": "Failed to delete"})
+		return
+	}
 	c.JSON(200, gin.H{"deleted": true})
-	return
 }
