@@ -13,6 +13,6 @@ func UsuarioRouter(router *gin.Engine) {
 	routes.GET("/usuarios", controllers.UsuarioGetAll)
 	routes.GET("/buscar_usuario_id/:id", controllers.UsuarioGetById)
 	routes.PUT("/actualizar_usuario_id/:id", controllers.UsuarioUpdate)
-	routes.DELETE("/elimnar_usuario_id/:id", controllers.UsuarioDelete)
+	routes.DELETE("/eliminar_usuario_id/:id", controllers.UsuarioDelete)
 
 }

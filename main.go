@@ -22,7 +22,6 @@ func main() {
 	routes.EjercicioRealizadoRouter(r)
 	routes.EjercicioRouter(r)
 	routes.NivelRouter(r)
-	routes.HistoricoResultadoRouter(r)
 
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{

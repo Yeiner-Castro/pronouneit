@@ -15,7 +15,6 @@ func main() {
 	err := configs.DB.AutoMigrate(
 		&models.Usuario{},
 		&models.EjercicioRealizado{},
-		&models.HistoricoResultado{},
 		&models.Ejercicio{},
 		&models.Nivel{},
 		&models.TipoDePalabra{},

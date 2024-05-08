@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"net/http"
+
 	"github.com/Yeiner-Castro/pronouneit.git/configs"
 	"github.com/Yeiner-Castro/pronouneit.git/models"
 
@@ -12,32 +14,42 @@ type TipoDePalabraRequestBody struct {
 }
 
 func TipoDePalabraCreate(c *gin.Context) {
-	body := TipoDePalabraRequestBody{}
-	c.BindJSON(&body)
+	var body TipoDePalabraRequestBody
+	err := c.BindJSON(&body)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid data"})
+		return
+	}
 
-	tipoDePalabra := &models.TipoDePalabra{Grupo: body.Grupo}
+	tipoDePalabra := models.TipoDePalabra{
+		Grupo: body.Grupo,
+	}
+
 	result := configs.DB.Create(&tipoDePalabra)
 	if result.Error != nil {
-		c.JSON(500, gin.H{"Error": "Failed to insert"})
+		c.JSON(http.StatusInternalServerError, gin.H{"Error": "Failed to insert"})
 		return
 	}
 
 	c.JSON(200, &tipoDePalabra)
 }
 
-func TipoDePalabraGet(c *gin.Context) {
+func TipoDePalabraGetAll(c *gin.Context) {
 	var tiposDePalabra []models.TipoDePalabra
 	configs.DB.Find(&tiposDePalabra)
-	c.JSON(200, &tiposDePalabra)
-	return
+	c.JSON(http.StatusOK, &tiposDePalabra)
 }
 
 func TipoDePalabraGetById(c *gin.Context) {
 	id := c.Param("id")
 	var tipoDePalabra models.TipoDePalabra
-	configs.DB.First(&tipoDePalabra, id)
-	c.JSON(200, &tipoDePalabra)
-	return
+	result := configs.DB.First(&tipoDePalabra, id)
+	if result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"Error": "No such tipo de palabra found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, &tipoDePalabra)
 }
 
 func TipoDePalabraUpdate(c *gin.Context) {
@@ -45,23 +57,34 @@ func TipoDePalabraUpdate(c *gin.Context) {
 	var tipoDePalabra models.TipoDePalabra
 	configs.DB.First(&tipoDePalabra, id)
 
-	body := TipoDePalabraRequestBody{}
-	c.BindJSON(&body)
-	data := &models.TipoDePalabra{Grupo: body.Grupo}
-
-	result := configs.DB.Model(&tipoDePalabra).Updates(data)
-	if result.Error != nil {
-		c.JSON(500, gin.H{"Error": true, "message": "Failed to update"})
+	var body TipoDePalabraRequestBody
+	err := c.BindJSON(&body)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid data"})
 		return
 	}
 
-	c.JSON(200, &tipoDePalabra)
+	data := &models.TipoDePalabra{
+		Grupo: body.Grupo,
+	}
+
+	result := configs.DB.Model(&tipoDePalabra).Updates(data)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"Error": true, "message": "Failed to update"})
+		return
+	}
+
+	c.JSON(http.StatusOK, &tipoDePalabra)
 }
 
 func TipoDePalabraDelete(c *gin.Context) {
 	id := c.Param("id")
 	var tipoDePalabra models.TipoDePalabra
-	configs.DB.Delete(&tipoDePalabra, id)
-	c.JSON(200, gin.H{"deleted": true})
-	return
+	result := configs.DB.Delete(&tipoDePalabra, id)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"Error": "Failed to delete"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"deleted": true})
 }

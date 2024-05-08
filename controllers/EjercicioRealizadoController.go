@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"net/http"
+
 	"github.com/Yeiner-Castro/pronouneit.git/configs"
 	"github.com/Yeiner-Castro/pronouneit.git/models"
 
@@ -9,13 +11,17 @@ import (
 
 type EjercicioRealizadoRequestBody struct {
 	Resultado   int  `json:"resultado"`
-	UsuarioID   uint `json:"usuario"`
-	EjercicioID uint `json:"ejercicio"`
+	UsuarioID   uint `json:"usuarioId"`
+	EjercicioID uint `json:"ejercicioId"`
 }
 
 func EjercicioRealizadoCreate(c *gin.Context) {
-	body := EjercicioRealizadoRequestBody{}
-	c.BindJSON(&body)
+	var body EjercicioRealizadoRequestBody
+	err := c.BindJSON(&body)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"Error": "Invalid body request"})
+		return
+	}
 
 	ejercicioRealizado := &models.EjercicioRealizado{
 		Resultado:   body.Resultado,
@@ -24,67 +30,68 @@ func EjercicioRealizadoCreate(c *gin.Context) {
 	}
 	result := configs.DB.Create(&ejercicioRealizado)
 	if result.Error != nil {
-		c.JSON(500, gin.H{"Error": "Failed to insert"})
+		c.JSON(http.StatusInternalServerError, gin.H{"Error": "Failed to insert"})
 		return
 	}
 
-	c.JSON(200, &ejercicioRealizado)
+	c.JSON(http.StatusOK, &ejercicioRealizado)
 }
 
-func EjercicioRealizadoGet(c *gin.Context) {
+func EjercicioRealizadoGetAll(c *gin.Context) {
 	var ejerciciosRealizados []models.EjercicioRealizado
-	configs.DB.Find(&ejerciciosRealizados)
-	c.JSON(200, &ejerciciosRealizados)
-	return
+	configs.DB.Preload("Usuario").Preload("Ejercicio").Find(&ejerciciosRealizados)
+	c.JSON(http.StatusOK, &ejerciciosRealizados)
 }
 
 func EjercicioRealizadoGetById(c *gin.Context) {
 	id := c.Param("id")
 	var ejercicioRealizado models.EjercicioRealizado
-	configs.DB.First(&ejercicioRealizado, id)
-	if ejercicioRealizado.ID == 0 {
-		c.JSON(404, gin.H{"Error": "No such completed exercise"})
+	result := configs.DB.Preload("Usuario").Preload("Ejercicio").First(&ejercicioRealizado, id)
+	if result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"Error": "No such completed exercise"})
 		return
 	}
-	c.JSON(200, &ejercicioRealizado)
-	return
+	c.JSON(http.StatusOK, &ejercicioRealizado)
 }
 
 func EjercicioRealizadoUpdate(c *gin.Context) {
 	id := c.Param("id")
 	var ejercicioRealizado models.EjercicioRealizado
-	configs.DB.First(&ejercicioRealizado, id)
-
-	if ejercicioRealizado.ID == 0 {
-		c.JSON(404, gin.H{"Error": "No such completed exercise"})
+	result := configs.DB.First(&ejercicioRealizado, id)
+	if result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"Error": "No such completed exercise"})
 		return
 	}
 
-	body := EjercicioRealizadoRequestBody{}
-	c.BindJSON(&body)
-	data := &models.EjercicioRealizado{
+	var body EjercicioRealizadoRequestBody
+	err := c.BindJSON(&body)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"Error": "Invalid body request"})
+		return
+	}
+
+	updatedData := &models.EjercicioRealizado{
 		Resultado:   body.Resultado,
 		UsuarioID:   body.UsuarioID,
 		EjercicioID: body.EjercicioID,
 	}
 
-	result := configs.DB.Model(&ejercicioRealizado).Updates(data)
-	if result.Error != nil {
-		c.JSON(500, gin.H{"Error": true, "message": "Failed to update"})
+	result2 := configs.DB.Model(&ejercicioRealizado).Updates(updatedData)
+	if result2.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"Error": true, "message": "Failed to update"})
 		return
 	}
 
-	c.JSON(200, &ejercicioRealizado)
+	c.JSON(http.StatusOK, &ejercicioRealizado)
 }
 
 func EjercicioRealizadoDelete(c *gin.Context) {
 	id := c.Param("id")
 	var ejercicioRealizado models.EjercicioRealizado
-	configs.DB.Delete(&ejercicioRealizado, id)
-	if ejercicioRealizado.ID == 0 {
-		c.JSON(404, gin.H{"Error": "No such completed exercise"})
+	result := configs.DB.Delete(&ejercicioRealizado, id)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"Error": "No such completed exercise"})
 		return
 	}
-	c.JSON(200, gin.H{"deleted": true})
-	return
+	c.JSON(http.StatusOK, gin.H{"deleted": true})
 }

@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"net/http"
+
 	"github.com/Yeiner-Castro/pronouneit.git/configs"
 	"github.com/Yeiner-Castro/pronouneit.git/models"
 
@@ -12,56 +14,80 @@ type NivelRequestBody struct {
 }
 
 func NivelCreate(c *gin.Context) {
-	body := NivelRequestBody{}
-	c.BindJSON(&body)
-
-	nivel := &models.Nivel{Nivel: body.Nivel}
-	result := configs.DB.Create(&nivel)
-	if result.Error != nil {
-		c.JSON(500, gin.H{"Error": "Failed to insert"})
+	var body NivelRequestBody
+	err := c.BindJSON(&body)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid data"})
 		return
 	}
 
-	c.JSON(200, &nivel)
+	nivel := models.Nivel{
+		Nivel: body.Nivel,
+	}
+
+	result := configs.DB.Create(&nivel)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"Error": "Failed to insert"})
+		return
+	}
+
+	c.JSON(http.StatusOK, &nivel)
 }
 
-func NivelGet(c *gin.Context) {
+func NivelGetAll(c *gin.Context) {
 	var niveles []models.Nivel
 	configs.DB.Find(&niveles)
-	c.JSON(200, &niveles)
-	return
+	c.JSON(http.StatusOK, &niveles)
 }
 
 func NivelGetById(c *gin.Context) {
 	id := c.Param("id")
 	var nivel models.Nivel
-	configs.DB.First(&nivel, id)
-	c.JSON(200, &nivel)
-	return
-}
-
-func NivelUpdate(c *gin.Context) {
-	id := c.Param("id")
-	var nivel models.Nivel
-	configs.DB.First(&nivel, id)
-
-	body := NivelRequestBody{}
-	c.BindJSON(&body)
-	data := &models.Nivel{Nivel: body.Nivel}
-
-	result := configs.DB.Model(&nivel).Updates(data)
+	result := configs.DB.First(&nivel, id)
 	if result.Error != nil {
-		c.JSON(500, gin.H{"Error": true, "message": "Failed to update"})
+		c.JSON(404, gin.H{"Error": "No such nivel found"})
 		return
 	}
 
 	c.JSON(200, &nivel)
 }
 
+func NivelUpdate(c *gin.Context) {
+	id := c.Param("id")
+	var nivel models.Nivel
+	err := configs.DB.First(&nivel, id)
+	if err.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"Error": "No such nivel found"})
+		return
+	}
+
+	var body NivelRequestBody
+	if err := c.BindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid data"})
+		return
+	}
+
+	updatedData := &models.Nivel{
+		Nivel: body.Nivel,
+	}
+
+	result := configs.DB.Model(&nivel).Updates(updatedData)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"Error": true, "message": "Failed to update"})
+		return
+	}
+
+	c.JSON(http.StatusOK, &nivel)
+}
+
 func NivelDelete(c *gin.Context) {
 	id := c.Param("id")
 	var nivel models.Nivel
-	configs.DB.Delete(&nivel, id)
-	c.JSON(200, gin.H{"deleted": true})
-	return
+	result := configs.DB.Delete(&nivel, id)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"Error": "No such nivel found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"deleted": true})
 }
