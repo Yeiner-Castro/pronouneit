@@ -24,3 +24,4 @@ Estos comandos instalarán Gin para el manejo de rutas HTTP, GORM como ORM para 
 ## Uso
 Para iniciar la aplicación, asegúrate de que estás en el directorio principal del proyecto y ejecuta:
 
+!go run main.go
