@@ -2,6 +2,8 @@ package controllers
 
 import (
 	"net/http"
+	"os"
+	"path/filepath"
 
 	"github.com/Yeiner-Castro/pronouneit.git/configs"
 	"github.com/Yeiner-Castro/pronouneit.git/models"
@@ -197,4 +199,48 @@ func CambiarContrasenia(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Contraseña actualizada correctamente"})
+}
+
+func UsuarioSubirFoto(c *gin.Context) {
+	// ID del usuario a actualizar
+	id := c.Param("id")
+
+	// Buscar el usuario en la base de datos
+	var usuario models.Usuario
+	if err := configs.DB.First(&usuario, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Usuario not found"})
+		return
+	}
+
+	// Manejar la carga del archivo de imagen
+	fileHeader, err := c.FormFile("foto")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Foto upload failed"})
+		return
+	}
+	defer fileHeader.Open()
+
+	// Asegúrate de que el directorio "uploads" existe
+	dir := "uploads"
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create directory"})
+		return
+	}
+
+	// Construir la ruta completa donde se guardará el archivo
+	filePath := filepath.Join(dir, fileHeader.Filename)
+	if err := c.SaveUploadedFile(fileHeader, filePath); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save file"})
+		return
+	}
+
+	// Actualizar la URL de la foto en el registro del usuario
+	result := configs.DB.Model(&usuario).Update("foto_url", filePath)
+	if result.Error != nil {
+		c.JSON(500, gin.H{"Error": "Failed to update"})
+		return
+	}
+
+	// Devolver la información actualizada del usuario
+	c.JSON(http.StatusOK, gin.H{"message": "Foto uploaded successfully", "foto_url": filePath})
 }
