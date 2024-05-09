@@ -13,6 +13,6 @@ func TipoDePalabraRouter(router *gin.Engine) {
 	routes.GET("/tipo_de_palabras", controllers.TipoDePalabraGetAll)
 	routes.GET("/buscar_grupo_id/:id", controllers.TipoDePalabraGetById)
 	routes.PUT("/actualizar_grupo_id/:id", controllers.TipoDePalabraUpdate)
-	routes.DELETE("/elimnar_grupo_id/:id", controllers.TipoDePalabraDelete)
+	routes.DELETE("/eliminar_grupo_id/:id", controllers.TipoDePalabraDelete)
 
 }

@@ -98,3 +98,46 @@ func EjercicioRealizadoDelete(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"deleted": true})
 }
+
+func GetUltimoEjercicioRealizadoByUsuario(c *gin.Context) {
+	usuarioId := c.Param("usuarioId")
+	ejercicioId := c.Param("ejercicioId")
+
+	var ejercicioRealizado models.EjercicioRealizado
+	result := configs.DB.Preload("Ejercicio").Where("usuario_id = ? AND ejercicio_id = ?", usuarioId, ejercicioId).Order("updated_at desc").First(&ejercicioRealizado)
+	if result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Ejercicio realizado not found"})
+		return
+	}
+
+	resultado := map[string]interface{}{
+		"contenido": ejercicioRealizado.Ejercicio.Contenido,
+		"resultado": ejercicioRealizado.Resultado,
+		"aprobado":  ejercicioRealizado.Aprobado,
+	}
+
+	c.JSON(http.StatusOK, resultado)
+}
+
+func GetEjerciciosRealizadosDetalleByUsuario(c *gin.Context) {
+	usuarioId := c.Param("usuarioId")
+
+	var ejerciciosRealizados []models.EjercicioRealizado
+	result := configs.DB.Preload("Ejercicio").Preload("Ejercicio.Nivel").Where("usuario_id = ?", usuarioId).Find(&ejerciciosRealizados)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error retrieving exercises"})
+		return
+	}
+
+	var resultados []map[string]interface{}
+	for _, ejercicioRealizado := range ejerciciosRealizados {
+		resultado := map[string]interface{}{
+			"nivel":    ejercicioRealizado.Ejercicio.Nivel.Nivel,
+			"nombre":   ejercicioRealizado.Ejercicio.Nombre,
+			"aprobado": ejercicioRealizado.Aprobado,
+		}
+		resultados = append(resultados, resultado)
+	}
+
+	c.JSON(http.StatusOK, resultados)
+}

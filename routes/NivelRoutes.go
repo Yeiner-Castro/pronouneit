@@ -13,6 +13,6 @@ func NivelRouter(router *gin.Engine) {
 	routes.GET("/niveles", controllers.NivelGetAll)
 	routes.GET("/buscar_nivel_id/:id", controllers.NivelGetById)
 	routes.PUT("/actualizar_nivel_id/:id", controllers.NivelUpdate)
-	routes.DELETE("/elimnar_nivel_id/:id", controllers.NivelDelete)
+	routes.DELETE("/eliminar_nivel_id/:id", controllers.NivelDelete)
 
 }
