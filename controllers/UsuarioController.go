@@ -7,36 +7,55 @@ import (
 	"github.com/Yeiner-Castro/pronouneit.git/models"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type UsuarioRequestBody struct {
-	Nombre      string `json:"nombre"`
-	Apellido    string `json:"apellido"`
-	Correo      string `json:"correo"`
-	Contrasenia string `json:"contrasenia"`
+	Nombre      string `json:"nombre" validate:"required"`
+	Apellido    string `json:"apellido" validate:"required"`
+	Correo      string `json:"correo" validate:"required,email"`
+	Contrasenia string `json:"contrasenia" validate:"required,min=8"`
+}
+
+type CambioContraseniaRequest struct {
+	ContraseniaActual string `json:"contrasenia_actual" validate:"required,min=8"`
+	NuevaContrasenia  string `json:"nueva_contrasenia" validate:"required,min=8"`
+}
+
+func hashPassword(password string) (string, error) {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
+	return string(bytes), err
 }
 
 func UsuarioCreate(c *gin.Context) {
+	var body UsuarioRequestBody
 
-	body := UsuarioRequestBody{}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input", "details": err.Error()})
+		return
+	}
 
-	c.BindJSON(&body)
+	hashedPassword, err := hashPassword(body.Contrasenia)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+		return
+	}
 
-	usuario := &models.Usuario{
+	usuario := models.Usuario{
 		Nombre:      body.Nombre,
 		Apellido:    body.Apellido,
 		Correo:      body.Correo,
-		Contrasenia: body.Contrasenia,
+		Contrasenia: hashedPassword,
 	}
 
 	result := configs.DB.Create(&usuario)
 
 	if result.Error != nil {
-		c.JSON(500, gin.H{"Error": "Failed to insert"})
+		c.JSON(http.StatusInternalServerError, gin.H{"Error": "Failed to insert", "details": result.Error.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, &usuario)
+	c.JSON(http.StatusCreated, gin.H{"id": usuario.ID, "nombre": usuario.Nombre, "apellido": usuario.Apellido, "correo": usuario.Correo})
 }
 
 func UsuarioGetAll(c *gin.Context) {
@@ -55,7 +74,7 @@ func UsuarioGetById(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, &usuario)
+	c.JSON(http.StatusOK, gin.H{"id": usuario.ID, "nombre": usuario.Nombre, "apellido": usuario.Apellido, "correo": usuario.Correo})
 }
 
 func UsuarioUpdate(c *gin.Context) {
@@ -74,20 +93,19 @@ func UsuarioUpdate(c *gin.Context) {
 	}
 
 	updatedData := models.Usuario{
-		Nombre:      body.Nombre,
-		Apellido:    body.Apellido,
-		Correo:      body.Correo,
-		Contrasenia: body.Contrasenia,
+		Nombre:   body.Nombre,
+		Apellido: body.Apellido,
+		Correo:   body.Correo,
 	}
 
 	result := configs.DB.Model(&usuario).Updates(updatedData)
 
 	if result.Error != nil {
-		c.JSON(500, gin.H{"Error": true, "message": "Failed to update"})
+		c.JSON(http.StatusInternalServerError, gin.H{"Error": true, "message": "Failed to update"})
 		return
 	}
 
-	c.JSON(200, &usuario)
+	c.JSON(http.StatusOK, gin.H{"id": usuario.ID, "nombre": usuario.Nombre, "apellido": usuario.Apellido, "correo": usuario.Correo})
 }
 
 func UsuarioDelete(c *gin.Context) {
@@ -96,10 +114,10 @@ func UsuarioDelete(c *gin.Context) {
 	result := configs.DB.Delete(&usuario, id)
 
 	if result.Error != nil {
-		c.JSON(500, gin.H{"Error": "Failed to delete"})
+		c.JSON(http.StatusInternalServerError, gin.H{"Error": "Failed to delete"})
 		return
 	}
-	c.JSON(200, gin.H{"deleted": true})
+	c.JSON(http.StatusOK, gin.H{"deleted": true})
 }
 
 func GetUsuarioNivelActual(c *gin.Context) {
@@ -141,4 +159,42 @@ func GetUsuarioNivelActual(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"nivelActual": nivelActual})
+}
+
+func CambiarContrasenia(c *gin.Context) {
+	usuarioID := c.Param("id") // O obtenerlo de la sesión del usuario autenticado
+	var body CambioContraseniaRequest
+
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input", "details": err.Error()})
+		return
+	}
+
+	var usuario models.Usuario
+	if err := configs.DB.First(&usuario, usuarioID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Usuario not found"})
+		return
+	}
+
+	// Verificar que la contraseña actual sea correcta
+	if err := bcrypt.CompareHashAndPassword([]byte(usuario.Contrasenia), []byte(body.ContraseniaActual)); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Contraseña actual incorrecta"})
+		return
+	}
+
+	// Hash de la nueva contraseña
+	nuevaContraseniaHashed, err := bcrypt.GenerateFromPassword([]byte(body.NuevaContrasenia), bcrypt.DefaultCost)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash new password"})
+		return
+	}
+
+	// Actualizar la contraseña en la base de datos
+	usuario.Contrasenia = string(nuevaContraseniaHashed)
+	if err := configs.DB.Save(&usuario).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update password", "details": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Contraseña actualizada correctamente"})
 }
