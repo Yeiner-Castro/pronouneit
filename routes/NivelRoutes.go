@@ -9,10 +9,10 @@ import (
 func NivelRouter(router *gin.Engine) {
 
 	routes := router.Group("/")
-	routes.POST("/crear_nivel", controllers.NivelCreate)
-	routes.GET("/niveles", controllers.NivelGetAll)
-	routes.GET("/buscar_nivel_id/:id", controllers.NivelGetById)
-	routes.PUT("/actualizar_nivel_id/:id", controllers.NivelUpdate)
-	routes.DELETE("/eliminar_nivel_id/:id", controllers.NivelDelete)
+	routes.POST("/nivel/crear", controllers.NivelCreate)
+	routes.GET("/nivel/listar", controllers.NivelGetAll)
+	routes.GET("/nivel/buscar/:id", controllers.NivelGetById)
+	routes.PUT("/nivel/actualizar/:id", controllers.NivelUpdate)
+	routes.DELETE("/nivel/eliminar/:id", controllers.NivelDelete)
 
 }

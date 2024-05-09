@@ -9,10 +9,10 @@ import (
 func UsuarioRouter(router *gin.Engine) {
 
 	routes := router.Group("/")
-	routes.POST("/crear_usuarios", controllers.UsuarioCreate)
-	routes.GET("/usuarios", controllers.UsuarioGetAll)
-	routes.GET("/buscar_usuario_id/:id", controllers.UsuarioGetById)
-	routes.PUT("/actualizar_usuario_id/:id", controllers.UsuarioUpdate)
-	routes.DELETE("/eliminar_usuario_id/:id", controllers.UsuarioDelete)
+	routes.POST("/usuario/crear", controllers.UsuarioCreate)
+	routes.GET("/usuario/listar", controllers.UsuarioGetAll)
+	routes.GET("/usuario/buscar/:id", controllers.UsuarioGetById)
+	routes.PUT("/usuario/actualizar/:id", controllers.UsuarioUpdate)
+	routes.DELETE("/usuario/eliminar/:id", controllers.UsuarioDelete)
 
 }

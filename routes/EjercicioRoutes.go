@@ -9,10 +9,10 @@ import (
 func EjercicioRouter(router *gin.Engine) {
 
 	routes := router.Group("/")
-	routes.POST("/crear_ejercicio", controllers.EjercicioCreate)
-	routes.GET("/ejercicios", controllers.EjercicioGetAll)
-	routes.GET("/buscar_ejercicio_id/:id", controllers.EjercicioGetById)
-	routes.PUT("/actualizar_ejercicio_id/:id", controllers.EjercicioUpdate)
-	routes.DELETE("/eliminar_ejercicio_id/:id", controllers.EjercicioDelete)
+	routes.POST("/ejercicio/crear", controllers.EjercicioCreate)
+	routes.GET("/ejercicio/listar", controllers.EjercicioGetAll)
+	routes.GET("/ejercicio/buscar/:id", controllers.EjercicioGetById)
+	routes.PUT("/ejercicio/actualizar/:id", controllers.EjercicioUpdate)
+	routes.DELETE("/ejercicio/eliminar/:id", controllers.EjercicioDelete)
 
 }

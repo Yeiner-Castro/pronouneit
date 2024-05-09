@@ -9,10 +9,10 @@ import (
 func TipoDePalabraRouter(router *gin.Engine) {
 
 	routes := router.Group("/")
-	routes.POST("/crear_grupo", controllers.TipoDePalabraCreate)
-	routes.GET("/tipo_de_palabras", controllers.TipoDePalabraGetAll)
-	routes.GET("/buscar_grupo_id/:id", controllers.TipoDePalabraGetById)
-	routes.PUT("/actualizar_grupo_id/:id", controllers.TipoDePalabraUpdate)
-	routes.DELETE("/eliminar_grupo_id/:id", controllers.TipoDePalabraDelete)
+	routes.POST("/tipo_de_palabra/crear", controllers.TipoDePalabraCreate)
+	routes.GET("/tipo_de_palabra/listar", controllers.TipoDePalabraGetAll)
+	routes.GET("/tipo_de_palabra/buscar/:id", controllers.TipoDePalabraGetById)
+	routes.PUT("/tipo_de_palabra/actualizar/:id", controllers.TipoDePalabraUpdate)
+	routes.DELETE("/tipo_de_palabra/eliminar/:id", controllers.TipoDePalabraDelete)
 
 }
