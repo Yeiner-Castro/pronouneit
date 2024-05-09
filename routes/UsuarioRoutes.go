@@ -14,5 +14,6 @@ func UsuarioRouter(router *gin.Engine) {
 	routes.GET("/usuario/buscar/:id", controllers.UsuarioGetById)
 	routes.PUT("/usuario/actualizar/:id", controllers.UsuarioUpdate)
 	routes.DELETE("/usuario/eliminar/:id", controllers.UsuarioDelete)
+	router.GET("/usuario/:usuarioId/nivelActual", controllers.GetUsuarioNivelActual)
 
 }

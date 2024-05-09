@@ -101,3 +101,44 @@ func UsuarioDelete(c *gin.Context) {
 	}
 	c.JSON(200, gin.H{"deleted": true})
 }
+
+func GetUsuarioNivelActual(c *gin.Context) {
+	userID := c.Param("usuarioId")
+
+	// Primero, obtenemos el nivel máximo de la base de datos
+	var maxNivel models.Nivel
+	if err := configs.DB.Order("nivel DESC").First(&maxNivel).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve maximum level"})
+		return
+	}
+
+	// Determinar el nivel actual del usuario verificando todos los ejercicios de cada nivel
+	nivelActual := 0
+	for nivel := 1; nivel <= maxNivel.Nivel; nivel++ {
+		var ejercicios []models.Ejercicio
+		configs.DB.Where("nivel_id = ?", nivel).Find(&ejercicios)
+
+		todosAprobados := true
+		for _, ejercicio := range ejercicios {
+			// Verificar si existe al menos un intento aprobado para este ejercicio
+			var count int64
+			configs.DB.Model(&models.EjercicioRealizado{}).
+				Where("usuario_id = ? AND ejercicio_id = ? AND aprobado = ?", userID, ejercicio.ID, true).
+				Count(&count)
+
+			if count == 0 {
+				todosAprobados = false
+				break
+			}
+		}
+
+		if todosAprobados {
+			nivelActual = nivel
+		} else {
+			nivelActual++
+			break // Si no todos los ejercicios de este nivel están aprobados, detiene el bucle
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"nivelActual": nivelActual})
+}
