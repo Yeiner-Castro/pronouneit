@@ -91,3 +91,14 @@ func NivelDelete(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"deleted": true})
 }
+
+func MaximoNivelGet(c *gin.Context) {
+	var maxNivel models.Nivel
+	result := configs.DB.Order("nivel desc").First(&maxNivel)
+	if result.Error != nil {
+		c.JSON(404, gin.H{"error": "No se pudo encontrar el nivel más alto"})
+		return
+	}
+
+	c.JSON(200, gin.H{"max_nivel": maxNivel.Nivel})
+}

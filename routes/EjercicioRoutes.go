@@ -14,5 +14,5 @@ func EjercicioRouter(router *gin.Engine) {
 	routes.GET("/ejercicio/buscar/:id", controllers.EjercicioGetById)
 	routes.PUT("/ejercicio/actualizar/:id", controllers.EjercicioUpdate)
 	routes.DELETE("/ejercicio/eliminar/:id", controllers.EjercicioDelete)
-
+	routes.GET("/ejercicio/nivel/:nivelId", controllers.EjercicioGetByNivel)
 }

@@ -97,3 +97,10 @@ func EjercicioDelete(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"deleted": true})
 }
+
+func EjercicioGetByNivel(c *gin.Context) {
+	nivelId := c.Param("nivelId")
+	var ejercicios []models.Ejercicio
+	configs.DB.Preload("Nivel").Preload("Tipo").Where("nivel_id = ?", nivelId).Find(&ejercicios)
+	c.JSON(http.StatusOK, &ejercicios)
+}
